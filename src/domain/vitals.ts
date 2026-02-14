@@ -1,6 +1,13 @@
 import type { VitalSigns } from './types'
 
-export type AgeBand = 'infante' | 'preescolar' | 'escolar' | 'adolescente' | 'adulto'
+export type AgeBand =
+  | 'recien_nacido'
+  | 'lactante'
+  | 'nino_pequeno'
+  | 'preescolar'
+  | 'escolar'
+  | 'adolescente'
+  | 'adulto'
 
 export type Threshold = {
   criticalLow?: number
@@ -29,48 +36,88 @@ const adultThresholds: VitalThresholds = {
   gcs: { criticalLow: 8, urgentLow: 12, warningLow: 14 },
 }
 
-const infantThresholds: VitalThresholds = {
-  hr: { criticalLow: 80, urgentLow: 90, warningLow: 100, warningHigh: 160, urgentHigh: 180, criticalHigh: 200 },
-  rr: { criticalLow: 20, urgentLow: 25, warningLow: 30, warningHigh: 50, urgentHigh: 60, criticalHigh: 70 },
-  sbp: { criticalLow: 60, urgentLow: 70, warningLow: 80, warningHigh: 120, urgentHigh: 130, criticalHigh: 140 },
+const pediatricTempThresholds: Threshold = {
+  criticalLow: 34.5,
+  urgentLow: 35.5,
+  warningLow: 36.4,
+  warningHigh: 37.6,
+  urgentHigh: 39,
+  criticalHigh: 40,
+}
+
+const newbornThresholds: VitalThresholds = {
+  hr: { criticalLow: 79, urgentLow: 89, warningLow: 99, warningHigh: 181, urgentHigh: 200, criticalHigh: 220 },
+  rr: { criticalLow: 19, urgentLow: 24, warningLow: 29, warningHigh: 61, urgentHigh: 70, criticalHigh: 80 },
+  sbp: { criticalLow: 49, urgentLow: 54, warningLow: 59, warningHigh: 81, urgentHigh: 90, criticalHigh: 100 },
   spo2: { criticalLow: 90, urgentLow: 92, warningLow: 94 },
-  temp: adultThresholds.temp,
+  temp: pediatricTempThresholds,
+  gcs: adultThresholds.gcs,
+}
+
+const infantThresholds: VitalThresholds = {
+  hr: { criticalLow: 79, urgentLow: 89, warningLow: 99, warningHigh: 161, urgentHigh: 180, criticalHigh: 200 },
+  rr: { criticalLow: 19, urgentLow: 24, warningLow: 29, warningHigh: 51, urgentHigh: 60, criticalHigh: 70 },
+  sbp: { criticalLow: 49, urgentLow: 59, warningLow: 69, warningHigh: 101, urgentHigh: 115, criticalHigh: 130 },
+  spo2: { criticalLow: 90, urgentLow: 92, warningLow: 94 },
+  temp: pediatricTempThresholds,
+  gcs: adultThresholds.gcs,
+}
+
+const toddlerThresholds: VitalThresholds = {
+  hr: { criticalLow: 69, urgentLow: 79, warningLow: 89, warningHigh: 151, urgentHigh: 170, criticalHigh: 190 },
+  rr: { criticalLow: 15, urgentLow: 19, warningLow: 23, warningHigh: 41, urgentHigh: 50, criticalHigh: 60 },
+  sbp: { criticalLow: 59, urgentLow: 69, warningLow: 79, warningHigh: 106, urgentHigh: 120, criticalHigh: 135 },
+  spo2: { criticalLow: 90, urgentLow: 92, warningLow: 94 },
+  temp: pediatricTempThresholds,
   gcs: adultThresholds.gcs,
 }
 
 const preschoolThresholds: VitalThresholds = {
-  hr: { criticalLow: 70, urgentLow: 80, warningLow: 90, warningHigh: 140, urgentHigh: 160, criticalHigh: 180 },
-  rr: { criticalLow: 20, urgentLow: 22, warningLow: 24, warningHigh: 40, urgentHigh: 50, criticalHigh: 60 },
-  sbp: { criticalLow: 70, urgentLow: 80, warningLow: 90, warningHigh: 120, urgentHigh: 130, criticalHigh: 140 },
+  hr: { criticalLow: 59, urgentLow: 69, warningLow: 79, warningHigh: 141, urgentHigh: 160, criticalHigh: 180 },
+  rr: { criticalLow: 13, urgentLow: 17, warningLow: 21, warningHigh: 35, urgentHigh: 44, criticalHigh: 54 },
+  sbp: { criticalLow: 59, urgentLow: 69, warningLow: 79, warningHigh: 111, urgentHigh: 125, criticalHigh: 140 },
   spo2: { criticalLow: 90, urgentLow: 92, warningLow: 94 },
-  temp: adultThresholds.temp,
+  temp: pediatricTempThresholds,
   gcs: adultThresholds.gcs,
 }
 
 const schoolThresholds: VitalThresholds = {
-  hr: { criticalLow: 60, urgentLow: 70, warningLow: 80, warningHigh: 120, urgentHigh: 140, criticalHigh: 160 },
-  rr: { criticalLow: 12, urgentLow: 14, warningLow: 18, warningHigh: 30, urgentHigh: 35, criticalHigh: 45 },
-  sbp: { criticalLow: 70, urgentLow: 80, warningLow: 90, warningHigh: 130, urgentHigh: 140, criticalHigh: 160 },
+  hr: { criticalLow: 49, urgentLow: 59, warningLow: 69, warningHigh: 121, urgentHigh: 140, criticalHigh: 160 },
+  rr: { criticalLow: 10, urgentLow: 13, warningLow: 17, warningHigh: 31, urgentHigh: 38, criticalHigh: 46 },
+  sbp: { criticalLow: 64, urgentLow: 74, warningLow: 84, warningHigh: 121, urgentHigh: 135, criticalHigh: 150 },
   spo2: { criticalLow: 90, urgentLow: 92, warningLow: 94 },
-  temp: adultThresholds.temp,
+  temp: pediatricTempThresholds,
   gcs: adultThresholds.gcs,
 }
 
-const adolescentThresholds: VitalThresholds = adultThresholds
+const adolescentThresholds: VitalThresholds = {
+  hr: { criticalLow: 39, urgentLow: 49, warningLow: 59, warningHigh: 101, urgentHigh: 120, criticalHigh: 140 },
+  rr: { criticalLow: 7, urgentLow: 9, warningLow: 11, warningHigh: 21, urgentHigh: 28, criticalHigh: 34 },
+  sbp: { criticalLow: 75, urgentLow: 84, warningLow: 89, warningHigh: 140, urgentHigh: 160, criticalHigh: 180 },
+  spo2: { criticalLow: 90, urgentLow: 92, warningLow: 94 },
+  temp: pediatricTempThresholds,
+  gcs: adultThresholds.gcs,
+}
 
 export const getAgeBand = (ageYears: number): AgeBand => {
-  if (ageYears < 1) return 'infante'
-  if (ageYears < 5) return 'preescolar'
+  if (ageYears < 28 / 365) return 'recien_nacido'
+  if (ageYears < 1) return 'lactante'
+  if (ageYears < 4) return 'nino_pequeno'
+  if (ageYears < 6) return 'preescolar'
   if (ageYears < 13) return 'escolar'
-  if (ageYears < 14) return 'adolescente'
+  if (ageYears < 18) return 'adolescente'
   return 'adulto'
 }
 
 export const getThresholds = (ageYears: number): VitalThresholds => {
   const band = getAgeBand(ageYears)
   switch (band) {
-    case 'infante':
+    case 'recien_nacido':
+      return newbornThresholds
+    case 'lactante':
       return infantThresholds
+    case 'nino_pequeno':
+      return toddlerThresholds
     case 'preescolar':
       return preschoolThresholds
     case 'escolar':

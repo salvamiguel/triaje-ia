@@ -38,6 +38,26 @@ const formatEva = (value?: number) => {
   return `${bounded}/10`
 }
 
+const ageBandLabel = (ageYears: number) => {
+  const band = getAgeBand(ageYears)
+  switch (band) {
+    case 'recien_nacido':
+      return 'recien nacido'
+    case 'lactante':
+      return 'lactante'
+    case 'nino_pequeno':
+      return 'nino pequeno'
+    case 'preescolar':
+      return 'preescolar'
+    case 'escolar':
+      return 'escolar'
+    case 'adolescente':
+      return 'adolescente'
+    default:
+      return 'adulto'
+  }
+}
+
 export const computeTriage = (assessment: TriageAssessment, patient: Patient): TriageResult => {
   const missingData = computeMissingData(assessment)
   const age = patient.demographics.edad
@@ -121,7 +141,7 @@ const buildEvolutivo = (
   selectedLabels: string[]
 ) => {
   const now = new Date().toLocaleString('es-ES')
-  const ageBand = getAgeBand(patient.demographics.edad)
+  const ageBand = ageBandLabel(patient.demographics.edad)
   const gcs = resolveGlasgowScore(assessment)
   const gcsBreakdown = assessment.glasgow
     ? ` (O${assessment.glasgow.ocular ?? '-'} V${assessment.glasgow.verbal ?? '-'} M${assessment.glasgow.motor ?? '-'})`
