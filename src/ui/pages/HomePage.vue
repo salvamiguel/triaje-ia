@@ -4,9 +4,10 @@
       <div>
         <div class="hero-title-row">
           <img :src="appLogo" alt="Logo TRIAJE" class="hero-title-logo" />
-          <h1 class="page-title">TR<span class="brand-title-accent">IA</span>JE: triaje rápido, claro y basado en protocolos</h1>
+          <h1 class="page-title">TR<span class="brand-title-accent">IA</span>JE</h1>
         </div>
         <p class="page-subtitle">
+          <h2>Triaje rápido, claro y basado en protocolos</h2>
           Herramienta académica para priorizar pacientes, documentar el evolutivo y sugerir actuaciones enfermeras
           iniciales de forma segura.
         </p>
