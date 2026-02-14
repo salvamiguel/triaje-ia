@@ -12,7 +12,7 @@
         <span class="ai-toast-spinner" aria-hidden="true"></span>
         <div>
           <div class="ai-toast-title">Mejorando el triaje con IA...</div>
-          <div class="ai-toast-subtitle">Mostrando resultado determinista mientras llega la IA.</div>
+          <div class="ai-toast-subtitle">{{ aiToastSubtitle }}</div>
         </div>
       </div>
       <div v-if="showAiUpdatedToast" class="ai-toast success" role="status" aria-live="polite">
@@ -241,8 +241,10 @@ const aiObjetivosMonitorizacion = computed(() => aiJson.value?.objetivos_monitor
 const aiCriteriosEscalada = computed(() => aiJson.value?.criterios_escalada ?? [])
 const aiPreguntasClave = computed(() => aiJson.value?.preguntas_clave ?? [])
 const aiPriorityJustification = computed(() => aiJson.value?.motivo_prioridad?.trim() ?? '')
-const hasAiPriorityJustification = computed(() => Boolean(aiPriorityJustification.value))
 const isAiPending = computed(() => Boolean(result.value?.aiPending))
+const isAiPriorityPending = computed(() => Boolean(result.value?.aiPriorityPending))
+const hasAiPriorityApplied = computed(() => Boolean(result.value?.aiPriorityApplied))
+const hasAiPriorityJustification = computed(() => Boolean(aiPriorityJustification.value || hasAiPriorityApplied.value))
 const aiSuggestedPriority = computed(() => {
   const value = aiJson.value?.prioridad_sugerida
   return value === 1 || value === 2 || value === 3 || value === 4 || value === 5 ? value : undefined
@@ -258,19 +260,42 @@ const deterministicPriorityInfo = computed(() => {
   return getPriorityInfo(originalPriority)
 })
 const aiPriorityNote = computed(() => {
-  if (!aiSuggestedPriority.value) return ''
+  if (!aiSuggestedPriority.value) {
+    if (hasAiPriorityApplied.value && isAiPending.value) {
+      return '✨ Prioridad orientativa actualizada por IA. Completando informe ampliado.'
+    }
+    return ''
+  }
   if (result.value?.priorityModifiedByAi) {
     return `✨ IA ajustó la prioridad final a P${aiSuggestedPriority.value}`
   }
   return `✨ IA sugiere prioridad ${aiSuggestedPriority.value}`
 })
+const aiToastSubtitle = computed(() => {
+  if (!isAiPending.value) return ''
+  if (isAiPriorityPending.value) {
+    return 'Mostrando resultado determinista mientras llega la revisión rápida de prioridad.'
+  }
+  if (hasAiPriorityApplied.value) {
+    return 'Prioridad orientativa actualizada con IA. Completando resumen y recomendaciones.'
+  }
+  if (result.value?.aiPriorityError) {
+    return 'No se pudo completar la prioridad rápida. Continuando con el informe IA completo.'
+  }
+  return 'Analizando datos con IA en segundo plano.'
+})
 const aiExecutionSummary = computed(() => {
   if (result.value?.aiPending) {
     const provider = result.value.aiProvider || store.config.provider
     const model = result.value.aiModel || store.config.model
+    const stageLabel = isAiPriorityPending.value
+      ? 'calculando prioridad rápida e informe completo'
+      : hasAiPriorityApplied.value
+      ? 'prioridad IA aplicada; completando informe completo'
+      : 'procesando informe completo'
     return {
       className: 'loading',
-      label: `IA en ejecución (${provider}/${model}). Mostrando resultado determinista temporal.`,
+      label: `IA en ejecución (${provider}/${model}): ${stageLabel}.`,
     }
   }
 
@@ -281,6 +306,13 @@ const aiExecutionSummary = computed(() => {
     return {
       className: 'success',
       label: `IA aplicada correctamente (${provider}/${model}${latency}).`,
+    }
+  }
+
+  if (result.value?.aiAttempted && result.value?.aiError && result.value?.aiPriorityApplied) {
+    return {
+      className: '',
+      label: `Prioridad actualizada por IA. No se pudo completar el informe ampliado: ${result.value.aiError}`,
     }
   }
 
@@ -422,7 +454,8 @@ const patientClinicalBadges = computed(() => {
   }
 
   const alergias = patient.value.clinical.alergias?.trim()
-  if (alergias) {
+  const normalizedAlergias = alergias?.toLowerCase().replace(/[.!]+$/g, '').trim()
+  if (alergias && normalizedAlergias !== 'no presenta') {
     badges.push(`⚠️ Alergias: ${alergias}`)
   }
 

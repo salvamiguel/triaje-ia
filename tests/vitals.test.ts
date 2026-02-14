@@ -43,4 +43,21 @@ describe('vitals pediatric thresholds', () => {
     expect(evaluation.severity).toBeLessThanOrEqual(3)
     expect(evaluation.flags).toContain('SatO2 baja')
   })
+
+  it('marca hipotension y taquipnea en adulto con criterios AHA/ACLS', () => {
+    const evaluation = evaluateVitals(
+      {
+        hr: 96,
+        rr: 24,
+        sbp: 88,
+        spo2: 95,
+        temp: 36.8,
+      },
+      34
+    )
+
+    expect(evaluation.severity).toBeLessThanOrEqual(3)
+    expect(evaluation.flags).toContain('Tensión sistólica baja')
+    expect(evaluation.flags).toContain('Frecuencia respiratoria alta')
+  })
 })

@@ -1,5 +1,9 @@
 import type { Patient } from '../domain/types'
-import { computeTriage } from '../domain/triageEngine'
+
+type DemoSeed = {
+  demographics: Patient['demographics']
+  clinical: Patient['clinical']
+}
 
 const basePatient = (partial: Partial<Patient>): Patient => {
   const now = new Date().toISOString()
@@ -31,110 +35,152 @@ const basePatient = (partial: Partial<Patient>): Patient => {
   }
 }
 
-export const buildDemoPatients = (): Patient[] => {
-  const demo1 = basePatient({
-    demographics: { nombre: 'Carlos', apellidos: 'M.', sexo: 'M', edad: 58, pesoKg: 82 },
-    clinical: {
-      antecedentes: 'HTA, dislipemia',
-      alergias: 'ND',
-      medicacion: 'IECA',
-      embarazo: 'no',
-      semanasEmbarazo: undefined,
-      vacunacion: 'ND',
-      riesgosSociales: '',
-    },
-    assessment: {
-      motivoConsulta: 'Dolor torácico opresivo de inicio súbito',
-      categoriaClinica: 'cardiovascular',
-      sintomas: ['Dolor torácico', 'Disnea'],
-      redFlags: ['dolor_toracico'],
-      constantes: { hr: 112, rr: 24, sbp: 145, dbp: 90, spo2: 94, temp: 36.7, gcs: 15, glucose: 132 },
-      glasgow: { ocular: 4, verbal: 5, motor: 6 },
-      dolor: 8,
-      observaciones: 'Dolor irradiado a brazo izquierdo',
-      sospechaInfecciosa: false,
-    },
+const seedToPatient = (seed: DemoSeed, index: number): Patient => {
+  const createdAt = new Date(Date.now() - (index + 1) * 11 * 60_000).toISOString()
+  return basePatient({
+    createdAt,
+    updatedAt: createdAt,
+    demographics: seed.demographics,
+    clinical: seed.clinical,
   })
+}
 
-  demo1.result = computeTriage(demo1.assessment!, demo1)
-
-  const demo2 = basePatient({
-    demographics: { nombre: 'Lucía', apellidos: 'G.', sexo: 'F', edad: 3, pesoKg: 14 },
+const demoSeeds: DemoSeed[] = [
+  {
+    demographics: { nombre: 'Carlos', apellidos: 'Molina', sexo: 'M', edad: 58, pesoKg: 82 },
     clinical: {
-      antecedentes: 'Sin antecedentes',
-      alergias: 'ND',
-      medicacion: '',
+      antecedentes: 'HTA, dislipemia y tabaquismo activo',
+      alergias: 'Penicilina (rash cutáneo)',
+      medicacion: 'Ramipril 5 mg/24h, atorvastatina 20 mg/24h',
       embarazo: 'no',
-      vacunacion: 'Calendario completo',
-      riesgosSociales: '',
+      vacunacion: 'Gripe 2025 y COVID pauta completa',
+      riesgosSociales: 'Alta carga laboral y estrés mantenido',
     },
-    assessment: {
-      motivoConsulta: 'Fiebre alta y decaimiento',
-      categoriaClinica: 'pediatrico',
-      sintomas: ['Fiebre', 'Letargo'],
-      redFlags: ['sepsis'],
-      constantes: { hr: 150, rr: 38, sbp: 90, dbp: 55, spo2: 95, temp: 39.5, gcs: 14, glucose: 98 },
-      glasgow: { ocular: 4, verbal: 4, motor: 6 },
-      dolor: 2,
-      observaciones: 'Rechazo de alimentación',
-      sospechaInfecciosa: true,
-    },
-  })
-
-  demo2.result = computeTriage(demo2.assessment!, demo2)
-
-  const demo3 = basePatient({
-    demographics: { nombre: 'Manuel', apellidos: 'R.', sexo: 'M', edad: 72, pesoKg: 76 },
+  },
+  {
+    demographics: { nombre: 'Lucía', apellidos: 'García', sexo: 'F', edad: 3, pesoKg: 14 },
     clinical: {
-      antecedentes: 'DM2',
-      alergias: '',
-      medicacion: 'Metformina',
+      antecedentes: 'Sin antecedentes relevantes',
+      alergias: 'Amoxicilina',
+      medicacion: 'Ibuprofeno ocasional',
       embarazo: 'no',
-      vacunacion: 'ND',
-      riesgosSociales: 'Vive solo',
+      vacunacion: 'Calendario vacunal completo',
+      riesgosSociales: 'Acude con madre, buen soporte familiar',
     },
-    assessment: {
-      motivoConsulta: 'Debilidad brusca en hemicuerpo derecho',
-      categoriaClinica: 'neurologico',
-      sintomas: ['Déficit focal', 'Alteración conciencia'],
-      redFlags: ['ictus'],
-      constantes: { hr: 98, rr: 20, sbp: 170, dbp: 95, spo2: 96, temp: 36.5, gcs: 13, glucose: 168 },
-      glasgow: { ocular: 4, verbal: 4, motor: 5 },
-      dolor: 1,
-      observaciones: 'Inicio hace 40 min',
-      sospechaInfecciosa: false,
-    },
-  })
-
-  demo3.result = computeTriage(demo3.assessment!, demo3)
-
-  const demo4 = basePatient({
-    demographics: { nombre: 'Ana', apellidos: 'L.', sexo: 'F', edad: 29, pesoKg: 60 },
+  },
+  {
+    demographics: { nombre: 'Manuel', apellidos: 'Ruiz', sexo: 'M', edad: 72, pesoKg: 76 },
     clinical: {
-      antecedentes: 'Embarazo 20 semanas',
-      alergias: 'ND',
-      medicacion: '',
+      antecedentes: 'DM2, FA paroxística',
+      alergias: 'No presenta',
+      medicacion: 'Metformina, apixabán',
+      embarazo: 'no',
+      vacunacion: 'Gripe anual al día',
+      riesgosSociales: 'Vive solo, apoyo vecinal puntual',
+    },
+  },
+  {
+    demographics: { nombre: 'Ana', apellidos: 'López', sexo: 'F', edad: 29, pesoKg: 60 },
+    clinical: {
+      antecedentes: 'Gestación de 20 semanas sin incidencias previas',
+      alergias: 'Látex',
+      medicacion: 'Suplemento prenatal',
       embarazo: 'si',
       semanasEmbarazo: 20,
+      vacunacion: 'Vacuna antigripal administrada',
+      riesgosSociales: 'Sin riesgos sociales identificados',
+    },
+  },
+  {
+    demographics: { nombre: 'Jorge', apellidos: 'Vidal', sexo: 'M', edad: 67, pesoKg: 84 },
+    clinical: {
+      antecedentes: 'EPOC grave y cardiopatía isquémica previa',
+      alergias: 'Metamizol (hipotensión)',
+      medicacion: 'Broncodilatador inhalado, AAS',
+      embarazo: 'no',
+      vacunacion: 'Gripe y neumococo actualizadas',
+      riesgosSociales: 'Dependencia parcial para ABVD',
+    },
+  },
+  {
+    demographics: { nombre: 'Elena', apellidos: 'Santos', sexo: 'F', edad: 24, pesoKg: 55 },
+    clinical: {
+      antecedentes: 'Sin antecedentes de interés',
+      alergias: 'No presenta',
+      medicacion: 'Ninguna habitual',
+      embarazo: 'no',
+      vacunacion: 'Calendario vacunal completo',
+      riesgosSociales: 'Estudiante universitaria',
+    },
+  },
+  {
+    demographics: { nombre: 'Pedro', apellidos: 'Ortega', sexo: 'M', edad: 41, pesoKg: 89 },
+    clinical: {
+      antecedentes: 'Faringitis de repetición',
+      alergias: 'Claritromicina (urticaria)',
+      medicacion: 'Paracetamol a demanda',
+      embarazo: 'no',
+      vacunacion: 'Vacuna tétanos al día',
+      riesgosSociales: 'Trabajador por turnos',
+    },
+  },
+  {
+    demographics: { nombre: 'Nuria', apellidos: 'Pérez', sexo: 'F', edad: 32, pesoKg: 63 },
+    clinical: {
+      antecedentes: 'Infecciones urinarias recurrentes',
+      alergias: 'Ciprofloxacino (náuseas intensas)',
+      medicacion: 'Ninguna habitual',
+      embarazo: 'no',
+      vacunacion: 'Gripe 2025',
+      riesgosSociales: 'Cuidadora principal de familiar dependiente',
+    },
+  },
+  {
+    demographics: { nombre: 'David', apellidos: 'Navarro', sexo: 'M', edad: 27, pesoKg: 73 },
+    clinical: {
+      antecedentes: 'Sin antecedentes relevantes',
+      alergias: 'No presenta',
+      medicacion: 'Ninguna',
+      embarazo: 'no',
+      vacunacion: 'Tétanos actualizado',
+      riesgosSociales: 'Deportista aficionado',
+    },
+  },
+  {
+    demographics: { nombre: 'Marta', apellidos: 'Iglesias', sexo: 'F', edad: 15, pesoKg: 52 },
+    clinical: {
+      antecedentes: 'Dermatitis atópica',
+      alergias: 'Ibuprofeno (angioedema previo leve)',
+      medicacion: 'Antihistamínico oral puntual',
+      embarazo: 'no',
+      vacunacion: 'Calendario vacunal completo',
+      riesgosSociales: 'Acompañada por madre, buen apoyo',
+    },
+  },
+  {
+    demographics: { nombre: 'Sergio', apellidos: 'Herrera', sexo: 'M', edad: 52, pesoKg: 80 },
+    clinical: {
+      antecedentes: 'TCE previo y epilepsia en seguimiento',
+      alergias: 'No presenta',
+      medicacion: 'Levetiracetam',
+      embarazo: 'no',
       vacunacion: 'ND',
-      riesgosSociales: '',
+      riesgosSociales: 'Sin acompañante al ingreso',
     },
-    assessment: {
-      motivoConsulta: 'Dolor abdominal bajo y sangrado leve',
-      categoriaClinica: 'gineco',
-      sintomas: ['Dolor pélvico', 'Sangrado vaginal'],
-      redFlags: ['embarazo_riesgo'],
-      constantes: { hr: 105, rr: 18, sbp: 110, dbp: 70, spo2: 98, temp: 36.8, gcs: 15, glucose: 92 },
-      glasgow: { ocular: 4, verbal: 5, motor: 6 },
-      dolor: 6,
-      observaciones: 'Sin mareos',
-      sospechaInfecciosa: false,
+  },
+  {
+    demographics: { nombre: 'Irene', apellidos: 'Campos', sexo: 'F', edad: 46, pesoKg: 68 },
+    clinical: {
+      antecedentes: 'Cólico renal previo',
+      alergias: 'Tramadol (náuseas severas)',
+      medicacion: 'Ninguna habitual',
+      embarazo: 'no',
+      vacunacion: 'Gripe 2024',
+      riesgosSociales: 'Sin riesgos sociales detectados',
     },
-  })
+  },
+]
 
-  demo4.result = computeTriage(demo4.assessment!, demo4)
-
-  return [demo1, demo2, demo3, demo4]
-}
+export const buildDemoPatients = (): Patient[] => demoSeeds.map(seedToPatient)
 
 export const demoPatients: Patient[] = buildDemoPatients()

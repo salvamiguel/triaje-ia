@@ -9,7 +9,7 @@ export const defaultAiConfig: AiConfig = {
   enabled: false,
   provider: 'gemini',
   apiKey: '',
-  model: 'gemini-1.5-flash',
+  model: 'gemini-2.5-flash',
 }
 
 const defaultState = (): AppState => ({
@@ -24,6 +24,9 @@ export const useAppStore = defineStore('app', {
     const loaded = localStorageAdapter.load()
     if (!loaded || loaded.version !== VERSION) {
       return defaultState()
+    }
+    if (loaded.config.provider === 'gemini' && loaded.config.model === 'gemini-1.5-flash') {
+      loaded.config.model = 'gemini-2.5-flash'
     }
     return loaded
   },
@@ -91,8 +94,13 @@ export const useAppStore = defineStore('app', {
       this.updatedAt = new Date().toISOString()
     },
     clearAll() {
-      this.$state = defaultState()
-      localStorageAdapter.clear()
+      const preservedConfig = { ...this.config }
+      this.$state = {
+        ...defaultState(),
+        config: preservedConfig,
+        updatedAt: new Date().toISOString(),
+      }
+      localStorageAdapter.save(this.$state)
     },
   },
 })

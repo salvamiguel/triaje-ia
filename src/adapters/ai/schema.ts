@@ -16,4 +16,10 @@ export const aiTriageSchema = z.object({
   evolutivo_triaje: z.string().min(1),
 })
 
+export const aiPrioritySchema = z.object({
+  prioridad_sugerida: z.coerce.number().int().min(1).max(5),
+  motivo_prioridad: z.string().min(1),
+})
+
 export type AiTriageSchema = z.infer<typeof aiTriageSchema>
+export type AiPrioritySchema = z.infer<typeof aiPrioritySchema>

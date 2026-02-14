@@ -16,6 +16,21 @@
     </div>
 
     <div class="card">
+      <h2 class="card-title">Antecedentes y alergias (confirmación)</h2>
+      <p class="page-subtitle">Información precargada desde el alta de paciente para validación enfermera.</p>
+      <div class="grid grid-2" style="margin-top: 12px;">
+        <label class="input">
+          <span class="label-row"><span class="field-icon">📚</span> Antecedentes</span>
+          <textarea :value="antecedentesConfirmacion" readonly placeholder="Sin datos registrados"></textarea>
+        </label>
+        <label class="input">
+          <span class="label-row"><span class="field-icon">⚠️</span> Alergias</span>
+          <textarea :value="alergiasConfirmacion" readonly placeholder="Sin datos registrados"></textarea>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
       <h2 class="card-title">Motivo y área clínica</h2>
       <label class="input">
         <span class="label-row"><span class="field-icon">📝</span> Motivo de consulta</span>
@@ -247,7 +262,7 @@ import {
   glasgowOcularOptions,
   glasgowVerbalOptions,
 } from '../../domain/glasgow'
-import { generateAiTriage } from '../../adapters/ai'
+import { generateAiPriority, generateAiTriage } from '../../adapters/ai'
 
 type TriageAssessmentForm = Omit<TriageAssessment, 'glasgow'> & {
   glasgow: NonNullable<TriageAssessment['glasgow']>
@@ -319,6 +334,8 @@ const initialAssessment = patient.value?.assessment
   : defaultAssessment(patient.value?.demographics.edad ?? 18)
 
 const form = reactive<TriageAssessmentForm>(initialAssessment)
+const antecedentesConfirmacion = computed(() => patient.value?.clinical.antecedentes || '')
+const alergiasConfirmacion = computed(() => patient.value?.clinical.alergias || '')
 
 const toggleSelection = (list: string[], value: string) => {
   const index = list.indexOf(value)
@@ -367,6 +384,42 @@ const loading = ref(false)
 const toPriority = (value: number | undefined): Priority | undefined =>
   value === 1 || value === 2 || value === 3 || value === 4 || value === 5 ? value : undefined
 
+const applyAiPrioritySuggestion = ({
+  target,
+  suggestedPriority,
+  suggestedReason,
+}: {
+  target: {
+    priority: Priority
+    reason: string
+    deterministicPriority?: Priority
+    deterministicReason?: string
+    priorityModifiedByAi?: boolean
+  }
+  suggestedPriority: Priority | undefined
+  suggestedReason?: string
+}) => {
+  if (!suggestedPriority) {
+    return false
+  }
+
+  if (suggestedPriority !== target.priority) {
+    if (!target.deterministicPriority) {
+      target.deterministicPriority = target.priority
+      target.deterministicReason = target.reason
+    }
+    target.priority = suggestedPriority
+    target.priorityModifiedByAi = true
+  }
+
+  const aiReason = suggestedReason?.trim()
+  if (aiReason) {
+    target.reason = aiReason
+  }
+
+  return true
+}
+
 const runAiInBackground = async ({
   patientId,
   triageAt,
@@ -380,50 +433,90 @@ const runAiInBackground = async ({
   patientSnapshot: Patient
   configSnapshot: AiConfig
 }) => {
-  const startedAt = Date.now()
-
-  try {
-    const ai = await generateAiTriage(assessmentSnapshot, patientSnapshot, configSnapshot)
+  const updateLiveResult = (
+    updater: (params: {
+      currentPatient: Patient
+      updatedResult: NonNullable<Patient['result']>
+      latestAssessment: TriageAssessment
+    }) => void
+  ) => {
     const currentPatient = store.patientById(patientId)
     if (!currentPatient?.result || currentPatient.result.triageAt !== triageAt) {
-      return
+      return false
     }
 
-    const updatedResult = safeClone(currentPatient.result)
-    updatedResult.ai = ai
-    updatedResult.aiError = undefined
-    updatedResult.aiLatencyMs = Date.now() - startedAt
-    updatedResult.aiPending = false
-
-    const suggestedPriority = toPriority(ai.json?.prioridad_sugerida)
-    if (suggestedPriority && suggestedPriority !== updatedResult.priority) {
-      updatedResult.deterministicPriority = updatedResult.priority
-      updatedResult.deterministicReason = updatedResult.reason
-      updatedResult.priority = suggestedPriority
-      updatedResult.priorityModifiedByAi = true
-      const aiReason = ai.json.motivo_prioridad?.trim()
-      if (aiReason) {
-        updatedResult.reason = aiReason
-      }
-    }
-
+    const updatedResult = safeClone(currentPatient.result) as NonNullable<Patient['result']>
     const latestAssessment = currentPatient.assessment ? safeClone(currentPatient.assessment) : assessmentSnapshot
+    updater({ currentPatient, updatedResult, latestAssessment })
     updatedResult.evolutivo = buildReadableEvolutivo(currentPatient, latestAssessment, updatedResult)
     store.setResult(patientId, updatedResult)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Error al usar IA'
-    const currentPatient = store.patientById(patientId)
-    if (!currentPatient?.result || currentPatient.result.triageAt !== triageAt) {
-      return
-    }
-
-    const failedResult = safeClone(currentPatient.result)
-    failedResult.aiError = message
-    failedResult.aiLatencyMs = Date.now() - startedAt
-    failedResult.aiPending = false
-    store.setResult(patientId, failedResult)
-    console.error('[IA] Error generando triaje', error)
+    return true
   }
+
+  const priorityStartedAt = Date.now()
+  const priorityTask = (async () => {
+    try {
+      const aiPriority = await generateAiPriority(assessmentSnapshot, patientSnapshot, configSnapshot)
+      updateLiveResult(({ updatedResult }) => {
+        const suggestedPriority = toPriority(aiPriority.prioridad_sugerida)
+        const priorityApplied = applyAiPrioritySuggestion({
+          target: updatedResult,
+          suggestedPriority,
+          suggestedReason: aiPriority.motivo_prioridad,
+        })
+        updatedResult.aiPriorityPending = false
+        updatedResult.aiPriorityApplied = priorityApplied
+        updatedResult.aiPriorityError = undefined
+        updatedResult.aiPriorityLatencyMs = Date.now() - priorityStartedAt
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error al calcular prioridad con IA'
+      updateLiveResult(({ updatedResult }) => {
+        updatedResult.aiPriorityPending = false
+        updatedResult.aiPriorityApplied = false
+        updatedResult.aiPriorityError = message
+        updatedResult.aiPriorityLatencyMs = Date.now() - priorityStartedAt
+      })
+      console.error('[IA] Error generando prioridad rápida', error)
+    }
+  })()
+
+  const fullStartedAt = Date.now()
+  const fullTask = (async () => {
+    try {
+      const ai = await generateAiTriage(assessmentSnapshot, patientSnapshot, configSnapshot)
+      updateLiveResult(({ updatedResult }) => {
+        updatedResult.ai = ai
+        updatedResult.aiError = undefined
+        updatedResult.aiLatencyMs = Date.now() - fullStartedAt
+        updatedResult.aiPending = false
+
+        const suggestedPriority = toPriority(ai.json?.prioridad_sugerida)
+        const priorityApplied = applyAiPrioritySuggestion({
+          target: updatedResult,
+          suggestedPriority,
+          suggestedReason: ai.json.motivo_prioridad,
+        })
+        updatedResult.aiPriorityPending = false
+        updatedResult.aiPriorityApplied = updatedResult.aiPriorityApplied || priorityApplied
+        updatedResult.aiPriorityError = undefined
+        if (!updatedResult.aiPriorityLatencyMs) {
+          updatedResult.aiPriorityLatencyMs = Date.now() - fullStartedAt
+        }
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error al usar IA'
+      updateLiveResult(({ updatedResult }) => {
+        updatedResult.aiError = message
+        updatedResult.aiLatencyMs = Date.now() - fullStartedAt
+        updatedResult.aiPending = false
+        updatedResult.aiPriorityPending = false
+      })
+      console.error('[IA] Error generando triaje completo', error)
+    }
+  })()
+
+  await Promise.allSettled([priorityTask, fullTask])
 }
 
 const handleTriage = async () => {
@@ -443,10 +536,15 @@ const handleTriage = async () => {
     result.aiProvider = shouldUseAi ? store.config.provider : undefined
     result.aiModel = shouldUseAi ? store.config.model : undefined
     result.aiPending = shouldUseAi
+    result.aiPriorityPending = shouldUseAi
+    result.aiPriorityApplied = false
+    result.aiPriorityError = undefined
+    result.aiPriorityLatencyMs = undefined
 
     if (store.config.enabled && !hasApiKey) {
       result.aiError = 'IA activada sin API key en Configuración.'
       result.aiPending = false
+      result.aiPriorityPending = false
     }
 
     result.evolutivo = buildReadableEvolutivo(patientSnapshot, assessmentSnapshot, result)

@@ -1,5 +1,5 @@
 import type { AiProviderPort } from '../../ports/AiProviderPort'
-import type { AiConfig, AiTriageResponse, Patient, TriageAssessment } from '../../domain/types'
+import type { AiConfig, AiPriorityResponse, AiTriageResponse, Patient, TriageAssessment } from '../../domain/types'
 import { geminiAdapter } from './gemini'
 import { openAiAdapter } from './openai'
 
@@ -18,4 +18,16 @@ export const generateAiTriage = async (
     throw new Error('Proveedor de IA no soportado')
   }
   return provider.generate(assessment, patient, config)
+}
+
+export const generateAiPriority = async (
+  assessment: TriageAssessment,
+  patient: Patient,
+  config: AiConfig
+): Promise<AiPriorityResponse> => {
+  const provider = providerMap[config.provider]
+  if (!provider) {
+    throw new Error('Proveedor de IA no soportado')
+  }
+  return provider.generatePriority(assessment, patient, config)
 }

@@ -19,7 +19,7 @@
           </select>
         </label>
         <label class="input">Modelo
-          <input v-model="config.model" type="text" placeholder="gemini-1.5-flash / gpt-4o-mini" />
+          <input v-model="config.model" type="text" placeholder="gemini-2.5-flash / gpt-4o-mini" />
         </label>
         <label class="input">API Key
           <input v-model="config.apiKey" type="password" placeholder="Pega tu API key" />

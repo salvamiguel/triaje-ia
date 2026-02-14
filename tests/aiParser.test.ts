@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseAiResponse } from '../src/adapters/ai/parser'
+import { parseAiPriorityResponse, parseAiResponse } from '../src/adapters/ai/parser'
 
 const validJson = {
   resumen_clinico: 'Resumen',
@@ -30,5 +30,25 @@ describe('ai parser', () => {
     const raw = `${JSON.stringify(validJson)}\n\nEVOLUTIVO\nPaciente con nota {contexto adicional}`
     const parsed = parseAiResponse(raw)
     expect(parsed.json.sospecha_clinica[0]).toContain('respiratorio')
+  })
+
+  it('parsea respuesta rápida de prioridad', () => {
+    const raw = '{"prioridad_sugerida":2,"motivo_prioridad":"Signos de compromiso hemodinámico inicial."}'
+    const parsed = parseAiPriorityResponse(raw)
+    expect(parsed.prioridad_sugerida).toBe(2)
+    expect(parsed.motivo_prioridad).toContain('hemodinámico')
+  })
+
+  it('parsea prioridad en bloque markdown json', () => {
+    const raw = '```json\n{"prioridad_sugerida":4,"motivo_prioridad":"Sin signos de alarma mayores."}\n```'
+    const parsed = parseAiPriorityResponse(raw)
+    expect(parsed.prioridad_sugerida).toBe(4)
+  })
+
+  it('parsea prioridad con aliases y formato string', () => {
+    const raw = '{"priority":"P2","reason":"Compromiso respiratorio inicial."}'
+    const parsed = parseAiPriorityResponse(raw)
+    expect(parsed.prioridad_sugerida).toBe(2)
+    expect(parsed.motivo_prioridad).toContain('respiratorio')
   })
 })

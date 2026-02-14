@@ -81,7 +81,8 @@ const patientClinicalBadges = (patient: Patient) => {
   }
 
   const alergias = patient.clinical.alergias?.trim()
-  if (alergias) {
+  const normalizedAlergias = alergias?.toLowerCase().replace(/[.!]+$/g, '').trim()
+  if (alergias && normalizedAlergias !== 'no presenta') {
     badges.push(`⚠️ Alergias: ${alergias}`)
   }
 

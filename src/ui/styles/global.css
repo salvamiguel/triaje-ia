@@ -424,6 +424,12 @@ a {
   resize: vertical;
 }
 
+.input textarea[readonly] {
+  background: #f7f9fc;
+  border-style: dashed;
+  color: var(--accent);
+}
+
 .checkbox-row {
   flex-direction: row;
   align-items: flex-start;
@@ -438,18 +444,21 @@ a {
 }
 
 .pregnancy-toggle {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 180px;
 }
 
 .pregnancy-option {
   border: 1px solid var(--line);
   background: #fff;
   color: var(--ink);
-  border-radius: 10px;
-  padding: 10px 8px;
+  border-radius: 8px;
+  padding: 7px 10px;
+  text-align: left;
   font-weight: 700;
+  font-size: 12px;
   cursor: pointer;
   font-family: inherit;
 }

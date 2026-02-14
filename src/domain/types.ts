@@ -72,6 +72,12 @@ export interface AiTriageResponse {
   rawText: string
 }
 
+export interface AiPriorityResponse {
+  prioridad_sugerida: Priority
+  motivo_prioridad: string
+  rawText: string
+}
+
 export interface TriageResult {
   priority: Priority
   reason: string
@@ -81,6 +87,10 @@ export interface TriageResult {
   triageAt?: string
   aiAttempted?: boolean
   aiPending?: boolean
+  aiPriorityPending?: boolean
+  aiPriorityApplied?: boolean
+  aiPriorityError?: string
+  aiPriorityLatencyMs?: number
   aiProvider?: AiProvider
   aiModel?: string
   aiError?: string

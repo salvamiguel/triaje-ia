@@ -7,7 +7,8 @@ test('carga casos demo desde la cola', async ({ page }) => {
   await page.getByRole('button', { name: 'Cargar casos demo' }).click()
 
   await expect(page.locator('table')).toBeVisible()
-  await expect(page.locator('tbody tr')).toHaveCount(4)
+  const rows = await page.locator('tbody tr').count()
+  expect(rows).toBeGreaterThanOrEqual(10)
   await expect(page.getByRole('link', { name: /Carlos/i })).toBeVisible()
 })
 
